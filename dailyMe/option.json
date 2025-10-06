@@ -1,0 +1,62 @@
+{
+    "display": {
+        "question1": {
+            "text": "มีอะไรอยากจำไว้ หรืออยากลืมไปบ้าง?",
+            "key": "remember_forget",
+            "activate": true
+        },
+        "question2": {
+            "text": "อยากให้พรุ่งนี้ต่างจากวันนี้ยังไง?",
+            "key": "tomorrow_different_from_today",
+            "activate": false
+        },
+        "question3": {
+            "text": "มีอะไรทำให้ยิ้มหรือหงุดหงิดไหม?",
+            "key": "anything_that_makes_you_smile_or_annoyed?",
+            "activate": false
+        }
+    },
+    "emotion": {
+        "angry": {
+            "image": "angry.png",
+            "tag": "angry",
+            "text": "โมโห",
+            "index": 1
+        },
+        "neutral": {
+            "image": "neutral.png",
+            "tag": "neutral",
+            "text": "เฉยๆ",
+            "index": 2
+        },
+        "happy": {
+            "image": "happy.png",
+            "tag": "happy",
+            "text": "สุขใจ",
+            "index": 3
+        },
+        "confused": {
+            "image": "confused.png",
+            "tag": "confused",
+            "text": "สับสน",
+            "index": 4
+        },
+        "chill": {
+            "image": "chill.png",
+            "tag": "chill",
+            "text": "สบายๆ",
+            "index": 5
+        },
+        "cry": {
+            "image": "cry.png",
+            "tag": "cry",
+            "text": "เศร้า",
+            "index": 6
+        }
+    },
+    "setting": {
+        "defaultPath": "D:/Projects/Python/LearnByWebsite/dailyMe/test",
+        "defaultPrefixName": "daily_",
+        "askBeforeSave": true
+    }
+}
