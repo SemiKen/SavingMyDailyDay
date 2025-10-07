@@ -91,12 +91,65 @@ created_emotion = False
 rowCount = 3
 
 path = os.path.dirname(os.path.abspath(__file__))
+option_file = ""
 selected_emotion = []
+
 def reload_json():
-    global loaded_data
-    if os.path.exists(f"{path}/option.json"):
-        with open(f"{path}/option.json", "r", encoding="utf-8") as f:
-            loaded_data = json.load(f)
+    global loaded_data, path, option_file
+
+    option_path = os.path.join(path, "assets", "config")
+    option_file = os.path.join(option_path, "option.json")
+
+    # ถ้าโฟลเดอร์ยังไม่มี ให้สร้าง
+    os.makedirs(option_path, exist_ok=True)
+
+    # ถ้าไฟล์ option.json ไม่มี ให้สร้างใหม่พร้อมค่าเริ่มต้น
+    if not os.path.exists(option_file):
+        default_data = {
+            "display": {
+                "question1": {
+                    "text": "มีอะไรอยากจำไว้ หรืออยากลืมไปบ้าง?",
+                    "key": "remember_forget",
+                    "activate": True
+                },
+                "question2": {
+                    "text": "อยากให้พรุ่งนี้ต่างจากวันนี้ยังไง?",
+                    "key": "tomorrow_different_from_today",
+                    "activate": False
+                },
+                "question3": {
+                    "text": "มีอะไรทำให้ยิ้มหรือหงุดหงิดไหม?",
+                    "key": "anything_that_makes_you_smile_or_annoyed?",
+                    "activate": False
+                }
+            },
+            "emotion": {
+                "angry": {"image": "angry.png", "tag": "angry", "text": "โมโห", "index": 1},
+                "neutral": {"image": "neutral.png", "tag": "neutral", "text": "เฉยๆ", "index": 2},
+                "happy": {"image": "happy.png", "tag": "happy", "text": "สุขใจ", "index": 3},
+                "confused": {"image": "confused.png", "tag": "confused", "text": "สับสน", "index": 4},
+                "chill": {"image": "chill.png", "tag": "chill", "text": "สบายๆ", "index": 5},
+                "cry": {"image": "cry.png", "tag": "cry", "text": "เศร้า", "index": 6}
+            },
+            "setting": {
+                "defaultPath": "D:/Projects/Python/LearnByWebsite/dailyMe/test",
+                "defaultPrefixName": "daily_",
+                "askBeforeSave": True
+            }
+        }
+
+        with open(option_file, "w", encoding="utf-8") as f:
+            json.dump(default_data, f, ensure_ascii=False, indent=4)
+
+        loaded_data = default_data
+        print("✅ สร้าง option.json ใหม่เรียบร้อย")
+        return
+
+    # ถ้ามีอยู่แล้ว ให้โหลด
+    with open(option_file, "r", encoding="utf-8") as f:
+        loaded_data = json.load(f)
+    print("Success : Reload option.json")
+
 reload_json()
 
 def load_daily():
@@ -159,7 +212,7 @@ def load_daily():
 
                 print(f"Selected emotion: {emotion_name}") # For debugging or further action
             # Load image for the button
-            image_path = os.path.join(path, "assets", emotion_info['image'])
+            image_path = os.path.join(path, "assets/images", emotion_info['image'])
             button_image = ctk.CTkImage(Image.open(image_path), size=(30, 30))
 
             button = ctk.CTkButton(emotionFrame, text=emotion_info['text'], font=secondFont, fg_color="transparent",
@@ -183,6 +236,7 @@ def load_daily():
             emotion_buttons.append(button)
 
 fileSaveType = ["txt", "json"]
+is_cancel = False
 def save_data():
     if not checkFormatTime():
         return
@@ -204,7 +258,7 @@ def save_data():
     try:
         defaultPath = loaded_data["setting"]["defaultPath"]
         if defaultPath == "":
-            save_directory = os.path.join(path, 'data')
+            save_directory = os.path.join(path, 'assets', 'data')
         else:
             save_directory = defaultPath
         os.makedirs(save_directory, exist_ok=True)
@@ -236,7 +290,7 @@ def save_data():
                 # Add selected emotions
                 if selected_emotion:
                     f.write(f"อารมณ์วันนี้: {', '.join(selected_emotion)}\n\n")
-    
+    global is_cancel
     if askbeforesave:
         choice_file_path = filedialog.asksaveasfilename(
             title="Save File",
@@ -246,21 +300,25 @@ def save_data():
             initialfile=save_file_path
         )
         if not choice_file_path: # If user clicks No or closes the dialog
+            is_cancel = True
+            CTkMessagebox(title="Cancel Save", message="File will not be saved.", icon="cancel")
             return
         
         global file_path
         file_path = choice_file_path
         saveFile()
-            
     else:
 
         file_path = os.path.join(save_directory, save_file_path)
         if os.path.exists(file_path):
             msg = CTkMessagebox(title="Confirm Overwrite", message="A file for today already exists. Do you want to overwrite it?",
                                 icon="question", option_1="Cancel", option_2="Overwrite")
-            if msg.get() == "Cancel":
+            if msg.get() == "Overwrite":
+                saveFile()
+            else:
+                is_cancel = True
+                CTkMessagebox(title="Cancel Save", message="Cancel saving overwrite file.", icon="cancel")
                 return
-            saveFile()
       
         else:
             saveFile()
@@ -268,7 +326,7 @@ def save_data():
         
     msg2 = CTkMessagebox(title="Success", message=f"Data will be saved to: {file_path}", icon="check"
                   , option_1="Open File", option_2="Okay", option_3="Open Folder")
-    if msg2.get() == "Okay":
+    if msg2.get() in (None, "Okay"):
         return
     elif msg2.get() == "Open File":
         try:
@@ -338,12 +396,13 @@ def update_default_path(new_path):
             loaded_data["setting"] = {}
         loaded_data["setting"]["defaultPath"] = new_path
         
-        with open(f"{path}/option.json", "w", encoding="utf-8") as f:
+        print(f"save as {option_file}")
+        with open(option_file, "w", encoding="utf-8") as f:
             json.dump(loaded_data, f, ensure_ascii=False, indent=4)
         CTkMessagebox(title="Success", message="Default save path updated successfully!", icon="check")
     except Exception as e:
         CTkMessagebox(title="Error", message=f"Failed to update default path: {e}", icon="cancel")
-    with open(f"{path}/option.json", "r", encoding="utf-8") as f:
+    with open(option_file, "r", encoding="utf-8") as f:
         loaded_data = json.load(f)
 
 def update_default_save_name():
@@ -353,7 +412,7 @@ def update_default_save_name():
     if new_name:
         loaded_data["setting"]["defaultPrefixName"] = new_name
         try:
-            with open(f"{path}/option.json", "w", encoding="utf-8") as f:
+            with open(option_file, "w", encoding="utf-8") as f:
                 json.dump(loaded_data, f, ensure_ascii=False, indent=4)
                 CTkMessagebox(title="Success", message="Default save name updated successfully!", icon="check")
                 file_name_label2.configure(text=new_name)
@@ -398,7 +457,7 @@ def toggle_ask_before_save(var):
             loaded_data["setting"] = {}
         loaded_data["setting"]["askBeforeSave"] = var.get()
         
-        with open(f"{path}/option.json", "w", encoding="utf-8") as f:
+        with open(option_file, "w", encoding="utf-8") as f:
             json.dump(loaded_data, f, ensure_ascii=False, indent=4)
         # CTkMessagebox(title="Success", message="Ask before save setting updated.", icon="check")
     except Exception as e:
@@ -510,7 +569,7 @@ def add_question():
 
     # Save updated data to option.json
     try:
-        with open(f"{path}/option.json", "w", encoding="utf-8") as f:
+        with open(option_file, "w", encoding="utf-8") as f:
             json.dump(loaded_data, f, ensure_ascii=False, indent=4)
         CTkMessagebox(title="Success", message="เพิ่มคำถามเรียบร้อยแล้ว! กรุณารีสตาร์ทแอปพลิเคชันเพื่อดูการเปลี่ยนแปลง", icon="check")
     except Exception as e:
@@ -570,7 +629,7 @@ def load_questions():
                         del loaded_data["display"][original_tag] # Remove old entry
                     loaded_data["display"][new_tag] = {"text": new_text, "key": new_tag, "activate": True}
                     try:
-                        with open(f"{path}/option.json", "w", encoding="utf-8") as f:
+                        with open(option_file, "w", encoding="utf-8") as f:
                             json.dump(loaded_data, f, ensure_ascii=False, indent=4)
                         CTkMessagebox(title="Success", message="คำถามและ/หรือ Key Tag ถูกแก้ไขแล้ว! กรุณารีสตาร์ทแอปพลิเคชันเพื่อดูการเปลี่ยนแปลง", icon="check")
                         load_questions() # Refresh the list
@@ -590,7 +649,7 @@ def load_questions():
             def toggle_question_activation(tag, var):
                 loaded_data["display"][tag]["activate"] = var.get()
                 try:
-                    with open(f"{path}/option.json", "w", encoding="utf-8") as f:
+                    with open(option_file, "w", encoding="utf-8") as f:
                         json.dump(loaded_data, f, ensure_ascii=False, indent=4)
                     # CTkMessagebox(title="Success", message="สถานะคำถามอัปเดตแล้ว! กรุณารีสตาร์ทแอปพลิเคชันเพื่อดูการเปลี่ยนแปลง", icon="check")
                 except Exception as e:
@@ -604,7 +663,7 @@ def load_questions():
                 if msg.get() == "Delete":
                     del loaded_data["display"][tag]
                     try:
-                        with open(f"{path}/option.json", "w", encoding="utf-8") as f:
+                        with open(option_file, "w", encoding="utf-8") as f:
                             json.dump(loaded_data, f, ensure_ascii=False, indent=4)
                         CTkMessagebox(title="Success", message="คำถามถูกลบแล้ว! กรุณารีสตาร์ทแอปพลิเคชันเพื่อดูการเปลี่ยนแปลง", icon="check")
                         load_questions() # Refresh the list
@@ -633,6 +692,41 @@ add_question_button.grid(row=1, column=2, columnspan=3, pady=5)
 root.after(100, load_files)
 root.after(100, load_questions)
 root.after(100, load_daily)
+
+#press esc to exit
+def close_window(event=None):
+    global is_cancel
+    has_text = False
+    for textarea in textarea_list:
+        if textarea.get("1.0", "end-1c").strip() != "":
+            has_text = True
+            break
+
+    if (
+        textarea1.get("1.0", "end-1c").strip() != ""
+        or textarea2.get("1.0", "end-1c").strip() != ""
+        or len(selected_emotion) > 0
+        or has_text
+    ):
+        msg_quit = CTkMessagebox(title="Do you want to save data?", message="Data will be gone if you quit.", icon="warning"
+                    , option_1="Cancel", option_2="No", option_3="Yes")
+       
+        user_choice = msg_quit.get()
+        if user_choice in (None, "None", "Cancel"):
+            is_cancel = True
+        elif user_choice == "Yes":
+            save_data()
+        elif user_choice == "No":
+            is_cancel = False
+            
+
+    if not is_cancel:
+        root.destroy()
+
+for key in ["<Escape>", "<Control-q>", "<Alt-F4>"]:
+    root.bind(key, close_window)
+
+root.protocol("WM_DELETE_WINDOW", close_window)
 
 # button1 = tk.Button(dailyFrame, text="บันทึก", font=mainFont)
 # button1.grid(row=2, column=0, columnspan=2, pady=5)
