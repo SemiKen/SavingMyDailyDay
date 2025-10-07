@@ -19,8 +19,8 @@ pip install -r requirements.txt
 ```
 
 **ดาวน์โหลดไฟล์โปรแกรม:**  
-- [Download ZIP](https://zippyshare.day/rEhmpxIjpbY1dKC/file)  
-- [Download RAR](https://zippyshare.day/6wqyYvDq5ln3rHf/file)  
+- [Download ZIP](https://mega.nz/file/LckClDRb#Z3940NudnsamlEqVFkEnADQRQRFUM5WH5zID6fG1xVw)  
+- [Download RAR](https://mega.nz/file/PBdV3a7Z#Kn4n_kWtYzTIRtSVjuDwgdlJYE6IgdwM0mdvTjgOWIU)
 
 ---
 
